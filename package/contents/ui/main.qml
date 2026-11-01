@@ -78,7 +78,7 @@ PlasmoidItem {
     toolTipMainText: "Claude Pulse"
     toolTipSubText: {
         if (!usage || (!session && !week)) return P.t("No data")
-        return [tipLine(P.t("Session"), session), tipLine(P.t("Week"), week)].filter(s => s.length > 0).join("\n")
+        return [usage.plan ? P.t("Plan: %1", usage.plan) : "", tipLine(P.t("Session"), session), tipLine(P.t("Week"), week)].filter(s => s.length > 0).join("\n")
     }
 
     compactRepresentation: MouseArea {

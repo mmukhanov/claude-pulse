@@ -99,6 +99,22 @@ Item {
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
             }
+            Rectangle {
+                visible: !!(dash.usage && dash.usage.plan)
+                Layout.preferredWidth: planLabel.implicitWidth + 14
+                Layout.preferredHeight: 20
+                radius: 10
+                color: dash.trackColor
+                Text {
+                    id: planLabel
+                    anchors.centerIn: parent
+                    text: dash.usage && dash.usage.plan ? dash.usage.plan : ""
+                    textFormat: Text.PlainText
+                    color: dash.textColor
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                }
+            }
             Item { Layout.fillWidth: true }
             Text {
                 visible: !!(dash.usage && dash.usage.fetched_at)

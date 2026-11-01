@@ -3,7 +3,7 @@
 
 The command is local to Claude Code: it costs no tokens and Claude Code handles
 its own login, so this script never reads credentials and opens no network
-connections itself. Prints one JSON document to stdout (or a short summary with
+connections itself. The plan name comes from two fields of ~/.claude.json. Prints one JSON document to stdout (or a short summary with
 --text). The last good result is kept and returned on failure.
 """
 import fcntl
@@ -48,6 +48,7 @@ LIMIT_RE = re.compile(
 )
 RESET_RE = re.compile(r"^(?:([A-Z][a-z]{2}) (\d{1,2})(?:, (\d{4}))?)?,?\s*(?:(\d{1,2})(?::(\d{2}))?\s*([ap]m))?$", re.I)
 STATS_RE = re.compile(r"^Last (24h|7d) · ([\d,]+) requests? · ([\d,]+) sessions?")
+PLAN_NAMES = {"free": "Free", "pro": "Pro", "max": "Max", "team": "Team", "enterprise": "Enterprise"}
 
 TEXT = {
     "en": {
@@ -194,8 +195,43 @@ def parse_usage(text, now):
     return out
 
 
+def plan_label(kind, tier=None):
+    """'claude_max' and 'default_claude_max_5x' become 'Max 5x'; unknown names give None."""
+    if not isinstance(kind, str):
+        return None
+    name = PLAN_NAMES.get(kind.lower().removeprefix("claude_"))
+    if not name:
+        return None
+    m = re.search(r"_(\d+)x$", tier) if isinstance(tier, str) else None
+    return "%s %sx" % (name, m.group(1)) if m else name
+
+
+def claude_binary(cfg):
+    return cfg["claude_path"] or shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
+
+
+def read_plan(cfg, profile=None):
+    """Current plan, or None. Reads only the plan fields, and no tokens."""
+    if profile is None:
+        profile = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~"), ".claude.json")
+    doc = load_json(profile)
+    account = doc.get("oauthAccount") if isinstance(doc, dict) else None
+    if isinstance(account, dict):
+        tier = account.get("userRateLimitTier") or account.get("organizationRateLimitTier")
+        label = plan_label(account.get("organizationType"), tier)
+        if label:
+            return label
+    try:
+        proc = subprocess.run([claude_binary(cfg), "auth", "status", "--json"], capture_output=True, text=True,
+                              timeout=20, cwd=STATE, stdin=subprocess.DEVNULL)
+        status = json.loads(proc.stdout)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
+    return plan_label(status.get("subscriptionType")) if isinstance(status, dict) else None
+
+
 def run_claude(cfg):
-    binary = cfg["claude_path"] or shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
+    binary = claude_binary(cfg)
     if not os.access(binary, os.X_OK):
         raise RuntimeError("claude not found")
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE_CODE_") and k != "CLAUDECODE"}
@@ -337,7 +373,7 @@ def collect(force, cfg):
         stale = dict(latest or {})
         stale.update(ok=False, error=str(e), failed_at=int(now))
         return stale
-    usage.update(ok=True, error="", fetched_at=int(now))
+    usage.update(ok=True, error="", fetched_at=int(now), plan=read_plan(cfg))
     usage["history"] = update_history(usage["session"], usage["week"], now)
     write_json(LATEST, usage)
     try:
@@ -348,7 +384,7 @@ def collect(force, cfg):
 
 
 def summary(usage):
-    parts = []
+    parts = ["Plan " + usage["plan"]] if usage.get("plan") else []
     for name, key in (("Session", "session"), ("Week", "week")):
         limit = usage.get(key)
         if limit:

@@ -41,9 +41,9 @@ def history():
 stats = {"day": {"requests": 494, "sessions": 9}, "week": {"requests": 1717, "sessions": 21}}
 cases = {
     "calm": {"ok": True, "fetched_at": now - 200, "session": window(18, 3 * 3600, 18000), "week": window(36, 2 * 86400, 604800),
-             "models": [{"name": "Fable", "pct": 10, "reset": now + 172800}], "stats": stats, "history": history()},
+             "plan": "Max 5x", "models": [{"name": "Fable", "pct": 10, "reset": now + 172800}], "stats": stats, "history": history()},
     "risk": {"ok": True, "fetched_at": now - 20, "session": window(72, 2.5 * 3600, 18000), "week": window(88, 3 * 86400, 604800),
-             "models": [{"name": "Fable", "pct": 91, "reset": now + 259200}], "stats": stats, "history": history()},
+             "plan": "Max 5x", "models": [{"name": "Fable", "pct": 91, "reset": now + 259200}], "stats": stats, "history": history()},
     "stale": {"ok": False, "error": "claude not found", "fetched_at": now - 900, "session": window(100, 1800, 18000),
               "week": window(64, 86400, 604800), "models": [], "stats": stats, "history": history()},
     "empty": None,

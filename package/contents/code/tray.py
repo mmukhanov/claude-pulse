@@ -100,6 +100,8 @@ class Tray:
         risk = bool(session.get("runout") or week.get("runout"))
         self.tray.setIcon(render_icon(session.get("pct", 0), week.get("pct", 0), risk))
         lines = ["Claude Pulse"]
+        if (self.usage or {}).get("plan"):
+            lines.append("Plan: " + self.usage["plan"])
         for name, limit in (("Session", session), ("Week", week)):
             if limit:
                 lines.append("%s: %d%% used, %d%% left" % (name, round(limit["pct"]), 100 - round(limit["pct"])))
