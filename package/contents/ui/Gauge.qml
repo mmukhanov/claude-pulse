@@ -8,6 +8,7 @@ ColumnLayout {
 
     property string title
     property string subtitle
+    property string kind: "session"
     property var limit: null
     property real now
     property color textColor
@@ -16,7 +17,7 @@ ColumnLayout {
     property color paceColor
 
     readonly property real pct: limit ? limit.pct : 0
-    readonly property var colors: P.level(pct)
+    readonly property var colors: P.level(pct, kind)
 
     spacing: 2
 
@@ -55,13 +56,21 @@ ColumnLayout {
         }
     }
 
-    Text {
+    Row {
         Layout.alignment: Qt.AlignHCenter
         Layout.topMargin: 6
-        text: gauge.title
-        color: gauge.textColor
-        font.pixelSize: 15
-        font.weight: Font.DemiBold
+        spacing: 6
+        Rectangle {
+            anchors.verticalCenter: parent.verticalCenter
+            width: 9; height: 9; radius: 4.5
+            color: P.level(0, gauge.kind).b
+        }
+        Text {
+            text: gauge.title
+            color: gauge.textColor
+            font.pixelSize: 15
+            font.weight: Font.DemiBold
+        }
     }
     Text {
         Layout.alignment: Qt.AlignHCenter

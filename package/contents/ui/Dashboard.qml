@@ -185,6 +185,7 @@ Item {
             Item { Layout.fillWidth: true }
             Gauge {
                 title: P.t("Week")
+                kind: "week"
                 subtitle: P.t("7-day window")
                 limit: dash.week
                 now: dash.now
@@ -237,8 +238,8 @@ Item {
                         width: Math.max(height, parent.width * Math.min(100, modelRow.modelData.pct) / 100)
                         gradient: Gradient {
                             orientation: Gradient.Horizontal
-                            GradientStop { position: 0; color: P.level(modelRow.modelData.pct).a }
-                            GradientStop { position: 1; color: P.level(modelRow.modelData.pct).b }
+                            GradientStop { position: 0; color: P.level(modelRow.modelData.pct, "week").a }
+                            GradientStop { position: 1; color: P.level(modelRow.modelData.pct, "week").b }
                         }
                         Behavior on width { NumberAnimation { duration: 900; easing.type: Easing.OutCubic } }
                     }

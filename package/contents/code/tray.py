@@ -18,8 +18,8 @@ FETCH = os.path.join(HERE, "fetch.py")
 DASHBOARD = os.path.normpath(os.path.join(HERE, "..", "ui", "Dashboard.qml"))
 
 
-def level_color(pct):
-    return QColor("#ef4444" if pct >= 85 else "#f97316" if pct >= 60 else "#22d3ee")
+def level_color(pct, base):
+    return QColor("#ef4444" if pct >= 85 else base)
 
 
 def render_icon(session, week, risk):
@@ -29,12 +29,12 @@ def render_icon(session, week, risk):
     pixmap.fill(Qt.GlobalColor.transparent)
     p = QPainter(pixmap)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    for pct, inset in ((session, 5), (week, 20)):
+    for pct, inset, base in ((session, 5, "#3b82f6"), (week, 20, "#d946ef")):
         rect = QRectF(inset, inset, size - 2 * inset, size - 2 * inset)
         p.setPen(QPen(QColor(128, 128, 128, 90), 9))
         p.drawEllipse(rect)
         if pct:
-            pen = QPen(level_color(pct), 9)
+            pen = QPen(level_color(pct, base), 9)
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             p.setPen(pen)
             p.drawArc(rect, 90 * 16, int(-min(100, pct) / 100 * 360 * 16))

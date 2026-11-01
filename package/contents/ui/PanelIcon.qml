@@ -31,8 +31,8 @@ Item {
             anchors.fill: parent
             value: icon.sessionPct
             thickness: Math.max(2.5, icon.ringSize * 0.13)
-            colorA: P.level(icon.sessionPct).a
-            colorB: P.level(icon.sessionPct).b
+            colorA: P.level(icon.sessionPct, "session").a
+            colorB: P.level(icon.sessionPct, "session").b
             trackColor: icon.trackColor
         }
         Ring {
@@ -41,8 +41,8 @@ Item {
             height: parent.height * 0.60
             value: icon.weekPct
             thickness: Math.max(2.5, icon.ringSize * 0.13)
-            colorA: P.level(icon.weekPct).a
-            colorB: P.level(icon.weekPct).b
+            colorA: P.level(icon.weekPct, "week").a
+            colorB: P.level(icon.weekPct, "week").b
             trackColor: icon.trackColor
         }
         SequentialAnimation on opacity {

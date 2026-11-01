@@ -42,11 +42,12 @@ function t(source) {
     return text
 }
 
-// Two-stop arc colours by how much of the limit is gone.
-function level(pct) {
+// Each window keeps its own colour so the rings can't be mixed up: blue for
+// the session, violet for the week. Only a nearly spent limit turns red.
+function level(pct, kind) {
     if (pct >= 85) return { a: "#fb923c", b: "#ef4444" }
-    if (pct >= 60) return { a: "#fcd34d", b: "#f97316" }
-    return { a: "#22d3ee", b: "#34d399" }
+    if (kind === "week") return { a: "#a78bfa", b: "#d946ef" }
+    return { a: "#22d3ee", b: "#3b82f6" }
 }
 
 function duration(seconds) {

@@ -13,7 +13,7 @@ Images use sample data. Claude Pulse is an unofficial community project, not aff
 
 ## Features
 
-- **Panel icon with two rings.** The outer ring is the 5-hour session, the inner ring is the week. Numbers next to the rings are optional.
+- **Panel icon with two rings.** The outer blue ring is the 5-hour session, the inner violet ring is the week. A ring turns red above 85%. Numbers next to the rings are optional.
 - **Dashboard on click.** It shows percent used and left, a countdown to each reset, per-model weekly limits and a 24-hour chart.
 - **Pace tick.** The tick on each ring marks where you would be if you spent the limit evenly, so you can see at a glance if you are ahead of it.
 - **Forecast.** It works out whether you will run out before the reset, and when.
