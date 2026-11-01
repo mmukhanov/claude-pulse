@@ -26,7 +26,7 @@ var ru = {
     "%1: %2% used, %3% left": "%1: использовано %2%, осталось %3%", "The data collector did not answer": "Сборщик данных не ответил",
     "may hit the limit": "риск упереться в лимит",
     "claude not found": "не найден claude",
-    "Plan: %1": "Тариф: %1", "General": "Общие", "Panel icon:": "Значок на панели:", "Show numbers next to the rings": "Показывать цифры рядом с кольцами"
+    "Plan: %1": "Тариф: %1", "No 5-hour limit": "Без лимита на 5 часов", "%1: no limit": "%1: без лимита", "General": "Общие", "Panel icon:": "Значок на панели:", "Show numbers next to the rings": "Показывать цифры рядом с кольцами"
 }
 
 function setLanguage(value) { override_ = value || "auto" }

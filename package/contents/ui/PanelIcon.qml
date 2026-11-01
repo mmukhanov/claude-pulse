@@ -29,6 +29,8 @@ Item {
 
         Ring {
             anchors.fill: parent
+            // No session limit on this plan: the week ring is all there is.
+            visible: !!icon.session || !icon.week
             value: icon.sessionPct
             thickness: Math.max(2.5, icon.ringSize * 0.13)
             colorA: P.level(icon.sessionPct, "session").a
@@ -75,6 +77,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 4
         Text {
+            visible: !!icon.session || !icon.week
             text: icon.session ? Math.round(icon.sessionPct) + "%" : "—"
             color: icon.textColor
             font.pixelSize: Math.min(13, Math.max(10, icon.height * 0.48))

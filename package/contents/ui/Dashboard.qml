@@ -190,7 +190,7 @@ Item {
             Item { Layout.fillWidth: true }
             Gauge {
                 title: P.t("Session")
-                subtitle: P.t("5-hour window")
+                subtitle: dash.week ? P.t("No 5-hour limit") : P.t("5-hour window")
                 limit: dash.session
                 now: dash.now
                 textColor: dash.textColor

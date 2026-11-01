@@ -3,7 +3,7 @@
 
 The command is local to Claude Code: it costs no tokens and Claude Code handles
 its own login, so this script never reads credentials and opens no network
-connections itself. The plan name comes from two fields of ~/.claude.json. Prints one JSON document to stdout (or a short summary with
+connections itself. Prints one JSON document to stdout (or a short summary with
 --text). The last good result is kept and returned on failure.
 """
 import fcntl
@@ -48,7 +48,7 @@ LIMIT_RE = re.compile(
 )
 RESET_RE = re.compile(r"^(?:([A-Z][a-z]{2}) (\d{1,2})(?:, (\d{4}))?)?,?\s*(?:(\d{1,2})(?::(\d{2}))?\s*([ap]m))?$", re.I)
 STATS_RE = re.compile(r"^Last (24h|7d) · ([\d,]+) requests? · ([\d,]+) sessions?")
-PLAN_NAMES = {"free": "Free", "pro": "Pro", "max": "Max", "team": "Team", "enterprise": "Enterprise"}
+PLAN_RE = re.compile(r"^[a-z][a-z0-9_]{0,23}$")
 
 TEXT = {
     "en": {
@@ -195,32 +195,19 @@ def parse_usage(text, now):
     return out
 
 
-def plan_label(kind, tier=None):
-    """'claude_max' and 'default_claude_max_5x' become 'Max 5x'; unknown names give None."""
-    if not isinstance(kind, str):
+def plan_label(kind):
+    """'max' becomes 'Max'. Names aren't listed, so a renamed plan still shows up."""
+    if not isinstance(kind, str) or not PLAN_RE.match(kind):
         return None
-    name = PLAN_NAMES.get(kind.lower().removeprefix("claude_"))
-    if not name:
-        return None
-    m = re.search(r"_(\d+)x$", tier) if isinstance(tier, str) else None
-    return "%s %sx" % (name, m.group(1)) if m else name
+    return kind.removeprefix("claude_").replace("_", " ").title()
 
 
 def claude_binary(cfg):
     return cfg["claude_path"] or shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
 
 
-def read_plan(cfg, profile=None):
-    """Current plan, or None. Reads only the plan fields, and no tokens."""
-    if profile is None:
-        profile = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.expanduser("~"), ".claude.json")
-    doc = load_json(profile)
-    account = doc.get("oauthAccount") if isinstance(doc, dict) else None
-    if isinstance(account, dict):
-        tier = account.get("userRateLimitTier") or account.get("organizationRateLimitTier")
-        label = plan_label(account.get("organizationType"), tier)
-        if label:
-            return label
+def read_plan(cfg):
+    """Current plan from `claude auth status`, or None. Only this one field is kept."""
     try:
         proc = subprocess.run([claude_binary(cfg), "auth", "status", "--json"], capture_output=True, text=True,
                               timeout=20, cwd=STATE, stdin=subprocess.DEVNULL)

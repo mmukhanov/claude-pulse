@@ -25,7 +25,7 @@ PlasmoidItem {
     }
 
     function tipLine(name, w) {
-        if (!w) return ""
+        if (!w) return week ? P.t("%1: no limit", name) : ""
         var line = P.t("%1: %2% used, %3% left", name, Math.round(w.pct), Math.round(100 - w.pct))
         if (w.reset) line += ", " + P.t("resets in %1", P.duration(w.reset - now))
         if (w.runout) line += ", " + P.t("may hit the limit")

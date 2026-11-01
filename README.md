@@ -13,7 +13,7 @@ Images use sample data. Claude Pulse is an unofficial community project, not aff
 
 ## Features
 
-- **Panel icon with two rings.** The outer blue ring is the 5-hour session, the inner violet ring is the week. A ring turns red above 85%. Numbers next to the rings are optional.
+- **Panel icon with two rings.** The outer blue ring is the 5-hour session, the inner violet ring is the week. A ring turns red above 85%. Plans with no 5-hour limit, such as verified Ultra accounts, show only the week. Numbers next to the rings are optional.
 - **Dashboard on click.** It shows your current plan, percent used and left, a countdown to each reset, per-model weekly limits and a 24-hour chart.
 - **Pace tick.** The tick on each ring marks where you would be if you spent the limit evenly, so you can see at a glance if you are ahead of it.
 - **Forecast.** It works out whether you will run out before the reset, and when.
@@ -117,7 +117,7 @@ Without `--text` it prints JSON, which you can feed to Waybar, Polybar or anythi
 
 ## Security and privacy
 
-- **No access to your login.** It never reads `~/.claude/.credentials.json` or any token. Claude Code handles its own login. From `~/.claude.json` it takes only the plan fields (`organizationType` and the rate limit tier) and stores just the resulting name, such as "Max 5x".
+- **No access to your login.** It never reads `~/.claude/.credentials.json` or any token. Claude Code handles its own login. The plan name comes from `claude auth status`, and only that one field is kept.
 - **No network code.** Only the `claude` command it starts talks to Anthropic, as it always does. There is no telemetry.
 - **Only numbers are stored.** `~/.local/state/claude-pulse` holds percentages, reset times, request and session counts, and it is readable only by you. Your prompts and conversations are never read or stored.
 - **Limited side effects.** The command runs in that private folder, so no project's settings or hooks apply. It saves no session and starts no MCP servers.
@@ -128,7 +128,6 @@ See [SECURITY.md](SECURITY.md) to report a problem.
 
 ## Limitations
 
-- The plan name comes from a Claude Code file that isn't a public interface. If it changes, Pulse falls back to `claude auth status`, which doesn't give the multiplier, or hides the plan.
 - `/usage` output is meant for people, not programs, so a Claude Code update could change it. If that happens the dashboard says so and keeps the last known numbers. The parsing lives in one small function.
 - Tested on Ubuntu 26.04 with Plasma 6.6 on Wayland. The tray app has only had a basic start-up check on Plasma, so reports from other desktops are welcome.
 - On Wayland the tray popup may not open next to the icon, because apps can't choose their own window position there.

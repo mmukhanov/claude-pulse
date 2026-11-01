@@ -1,7 +1,5 @@
 import importlib.util
-import json
 import os
-import tempfile
 import unittest
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -153,22 +151,19 @@ class AlertTests(unittest.TestCase):
 
 class PlanTests(unittest.TestCase):
     def test_labels(self):
-        self.assertEqual(fetch.plan_label("claude_max", "default_claude_max_5x"), "Max 5x")
-        self.assertEqual(fetch.plan_label("claude_max", "default_claude_max_20x"), "Max 20x")
-        self.assertEqual(fetch.plan_label("claude_pro", "default_claude_ai"), "Pro")
         self.assertEqual(fetch.plan_label("max"), "Max")
+        self.assertEqual(fetch.plan_label("ultra"), "Ultra")
+        self.assertEqual(fetch.plan_label("claude_team_plus"), "Team Plus")
 
-    def test_unknown_values_give_nothing(self):
-        for value in ("<b>x</b>", "claude_mystery", "", None, 5):
+    def test_bad_values_give_nothing(self):
+        for value in ("<b>x</b>", "Max 5x", "", "a" * 40, None, 5):
             self.assertIsNone(fetch.plan_label(value))
 
-    def test_reads_only_from_profile(self):
-        with tempfile.TemporaryDirectory() as folder:
-            profile = os.path.join(folder, ".claude.json")
-            with open(profile, "w") as f:
-                json.dump({"oauthAccount": {"organizationType": "claude_max", "emailAddress": "someone@example.com",
-                                            "organizationRateLimitTier": "default_claude_max_5x", "userRateLimitTier": None}}, f)
-            self.assertEqual(fetch.read_plan(fetch.load_settings({}), profile), "Max 5x")
+    def test_plan_without_a_session_limit(self):
+        usage = fetch.parse_usage("Current week (all models): 36% used · resets Nov 3, 8am (Europe/Warsaw)\n", NOW)
+        self.assertIsNone(usage["session"])
+        self.assertEqual(usage["week"]["pct"], 36)
+        self.assertIn("Week", fetch.summary(usage))
 
 
 class SettingsTests(unittest.TestCase):

@@ -30,6 +30,8 @@ def render_icon(session, week, risk):
     p = QPainter(pixmap)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
     for pct, inset, base in ((session, 5, "#3b82f6"), (week, 20, "#d946ef")):
+        if pct is None:
+            continue
         rect = QRectF(inset, inset, size - 2 * inset, size - 2 * inset)
         p.setPen(QPen(QColor(128, 128, 128, 90), 9))
         p.drawEllipse(rect)
@@ -98,7 +100,7 @@ class Tray:
         session = (self.usage or {}).get("session") or {}
         week = (self.usage or {}).get("week") or {}
         risk = bool(session.get("runout") or week.get("runout"))
-        self.tray.setIcon(render_icon(session.get("pct", 0), week.get("pct", 0), risk))
+        self.tray.setIcon(render_icon(session.get("pct", None if week else 0), week.get("pct", 0), risk))
         lines = ["Claude Pulse"]
         if (self.usage or {}).get("plan"):
             lines.append("Plan: " + self.usage["plan"])
