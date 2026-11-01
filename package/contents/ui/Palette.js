@@ -25,7 +25,10 @@ var ru = {
     "Could not update: %1": "Не удалось обновить: %1", "Showing the last known data": "Показаны последние данные",
     "%1: %2% used, %3% left": "%1: использовано %2%, осталось %3%", "The data collector did not answer": "Сборщик данных не ответил",
     "may hit the limit": "риск упереться в лимит",
-    "claude not found": "не найден claude",
+    "claude not found": "Не найден claude",
+    "Not logged in to Claude Code. Run claude and log in": "Вход в Claude Code не выполнен. Запустите claude и войдите",
+    "This login has no subscription limits. Log in to Claude Code with a subscription": "У этого входа нет лимитов подписки. Войдите в Claude Code по подписке",
+    "No limits in /usage output. Its format may have changed": "В ответе /usage нет лимитов. Возможно, изменился его формат",
     "Plan: %1": "Тариф: %1", "No 5-hour limit": "Без лимита на 5 часов", "%1: no limit": "%1: без лимита", "General": "Общие", "Panel icon:": "Значок на панели:", "Show numbers next to the rings": "Показывать цифры рядом с кольцами"
 }
 

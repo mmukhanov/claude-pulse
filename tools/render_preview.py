@@ -49,6 +49,7 @@ cases = {
     "stale": {"ok": False, "error": "claude not found", "fetched_at": now - 900, "session": window(100, 1800, 18000),
               "week": window(64, 86400, 604800), "models": [], "stats": stats, "history": history()},
     "empty": None,
+    "signedout": {"ok": False, "error": "Not logged in to Claude Code. Run claude and log in"},
 }
 if len(sys.argv) > 2:
     with open(sys.argv[2], encoding="utf-8") as f:

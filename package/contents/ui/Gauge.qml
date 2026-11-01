@@ -49,6 +49,7 @@ ColumnLayout {
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
+                visible: !!gauge.limit
                 text: P.t("used")
                 color: gauge.mutedColor
                 font.pixelSize: 11

@@ -1,6 +1,8 @@
 import importlib.util
 import os
+import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -164,6 +166,46 @@ class PlanTests(unittest.TestCase):
         self.assertIsNone(usage["session"])
         self.assertEqual(usage["week"]["pct"], 36)
         self.assertIn("Week", fetch.summary(usage))
+
+
+class LoginTests(unittest.TestCase):
+    def run_collect(self, auth, output="", ran=None):
+        def fake_run(cfg):
+            if ran is not None:
+                ran.append(True)
+            return output
+
+        with tempfile.TemporaryDirectory() as folder, mock.patch.multiple(
+            fetch, LATEST=os.path.join(folder, "latest.json"), HISTORY=os.path.join(folder, "history.jsonl"),
+            NOTIFIED=os.path.join(folder, "notified.json"), read_auth=lambda cfg: auth, run_claude=fake_run,
+            send_notification=lambda *a: None,
+        ):
+            return fetch.collect(True, fetch.load_settings({}))
+
+    def test_logged_out_skips_usage(self):
+        ran = []
+        usage = self.run_collect({"plan": None, "logged_in": False, "method": None}, ran=ran)
+        self.assertEqual(usage["error"], fetch.NOT_LOGGED_IN)
+        self.assertEqual(ran, [])
+
+    def test_api_key_login_is_explained(self):
+        usage = self.run_collect({"plan": None, "logged_in": True, "method": "api_key"}, "no limits here")
+        self.assertEqual(usage["error"], fetch.NO_SUBSCRIPTION)
+
+    def test_subscription_without_limits_means_format_change(self):
+        usage = self.run_collect({"plan": "Max", "logged_in": True, "method": "claude.ai"}, "new format")
+        self.assertEqual(usage["error"], fetch.NO_LIMITS)
+
+    def test_unavailable_status_does_not_block_usage(self):
+        usage = self.run_collect({"plan": None, "logged_in": None, "method": None}, SAMPLE)
+        self.assertTrue(usage["ok"])
+        self.assertEqual(usage["week"]["pct"], 36)
+
+    def test_only_needed_fields_are_kept(self):
+        usage = self.run_collect({"plan": "Max", "logged_in": True, "method": "claude.ai"}, SAMPLE)
+        self.assertEqual(usage["plan"], "Max")
+        self.assertNotIn("method", usage)
+        self.assertNotIn("logged_in", usage)
 
 
 class SettingsTests(unittest.TestCase):

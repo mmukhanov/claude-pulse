@@ -30,7 +30,7 @@ Item {
 
     function makeVerdict() {
         if (!usage || (!session && !week))
-            return { color: "#94a3b8", title: P.t("No data"), text: P.t("Waiting for the first answer from Claude Code") }
+            return { color: "#94a3b8", title: P.t("No data"), text: usage && usage.error ? P.t(usage.error) : P.t("Waiting for the first answer from Claude Code") }
         var hard = (session && session.pct >= 100) ? session : (week && week.pct >= 100 ? week : null)
         if (hard) {
             var what = P.t(hard === session ? "Session limit reached" : "Week limit reached")
@@ -176,6 +176,7 @@ Item {
                 Text {
                     width: parent.width
                     text: dash.verdict.text
+                    textFormat: Text.PlainText
                     color: dash.textColor
                     opacity: 0.8
                     font.pixelSize: 12
@@ -324,9 +325,9 @@ Item {
 
         Text {
             Layout.fillWidth: true
-            visible: !!(dash.usage && dash.usage.ok === false)
+            visible: !!(dash.usage && dash.usage.ok === false && dash.usage.fetched_at)
             text: dash.usage && dash.usage.error
-                  ? P.t("Could not update: %1", P.t(dash.usage.error)) + (dash.usage.fetched_at ? ". " + P.t("Showing the last known data") : "") : ""
+                  ? P.t("Could not update: %1", P.t(dash.usage.error)) + ". " + P.t("Showing the last known data") : ""
             textFormat: Text.PlainText
             color: "#ef4444"
             font.pixelSize: 12

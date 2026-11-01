@@ -137,7 +137,9 @@ See [SECURITY.md](SECURITY.md) to report a problem.
 | What you see | What to do |
 | --- | --- |
 | "claude not found" | Set `claude_path` in the settings. The panel may have a shorter `PATH` than your terminal |
-| "no limits in /usage output" | Run `claude`, then `/usage`. If it shows no limits, you are not logged in with a subscription |
+| "Not logged in to Claude Code" | Run `claude` and log in |
+| "This login has no subscription limits" | You are using an API key or similar. Log in with a Claude subscription |
+| "No limits in /usage output" | Run `claude`, then `/usage`. If limits show there, the format changed, so please open an issue |
 | Old version after updating | Run `systemctl --user restart plasma-plasmashell` |
 | No notifications | Check that `notify-send` is installed |
 

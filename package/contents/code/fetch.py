@@ -48,6 +48,9 @@ LIMIT_RE = re.compile(
 )
 RESET_RE = re.compile(r"^(?:([A-Z][a-z]{2}) (\d{1,2})(?:, (\d{4}))?)?,?\s*(?:(\d{1,2})(?::(\d{2}))?\s*([ap]m))?$", re.I)
 STATS_RE = re.compile(r"^Last (24h|7d) · ([\d,]+) requests? · ([\d,]+) sessions?")
+NOT_LOGGED_IN = "Not logged in to Claude Code. Run claude and log in"
+NO_SUBSCRIPTION = "This login has no subscription limits. Log in to Claude Code with a subscription"
+NO_LIMITS = "No limits in /usage output. Its format may have changed"
 PLAN_RE = re.compile(r"^[a-z][a-z0-9_]{0,23}$")
 
 TEXT = {
@@ -206,15 +209,22 @@ def claude_binary(cfg):
     return cfg["claude_path"] or shutil.which("claude") or os.path.expanduser("~/.local/bin/claude")
 
 
-def read_plan(cfg):
-    """Current plan from `claude auth status`, or None. Only this one field is kept."""
+def read_auth(cfg):
+    """Plan and login state from `claude auth status`. Email and organisation are ignored."""
+    auth = {"plan": None, "logged_in": None, "method": None}
     try:
         proc = subprocess.run([claude_binary(cfg), "auth", "status", "--json"], capture_output=True, text=True,
                               timeout=20, cwd=STATE, stdin=subprocess.DEVNULL)
         status = json.loads(proc.stdout)
     except (OSError, ValueError, subprocess.SubprocessError):
-        return None
-    return plan_label(status.get("subscriptionType")) if isinstance(status, dict) else None
+        return auth
+    if isinstance(status, dict):
+        auth["plan"] = plan_label(status.get("subscriptionType"))
+        if isinstance(status.get("loggedIn"), bool):
+            auth["logged_in"] = status["loggedIn"]
+        if isinstance(status.get("authMethod"), str):
+            auth["method"] = status["authMethod"]
+    return auth
 
 
 def run_claude(cfg):
@@ -352,15 +362,18 @@ def collect(force, cfg):
         latest = None
     if not force and latest and latest.get("ok") and now - latest.get("fetched_at", 0) < MIN_AGE:
         return latest
+    auth = read_auth(cfg)
     try:
+        if auth["logged_in"] is False:
+            raise RuntimeError(NOT_LOGGED_IN)
         usage = parse_usage(run_claude(cfg), now)
         if not usage["session"] and not usage["week"]:
-            raise RuntimeError("no limits in /usage output (API key login, or the format changed)")
+            raise RuntimeError(NO_SUBSCRIPTION if auth["method"] not in (None, "claude.ai") else NO_LIMITS)
     except (RuntimeError, OSError, subprocess.SubprocessError) as e:
         stale = dict(latest or {})
         stale.update(ok=False, error=str(e), failed_at=int(now))
         return stale
-    usage.update(ok=True, error="", fetched_at=int(now), plan=read_plan(cfg))
+    usage.update(ok=True, error="", fetched_at=int(now), plan=auth["plan"])
     usage["history"] = update_history(usage["session"], usage["week"], now)
     write_json(LATEST, usage)
     try:
