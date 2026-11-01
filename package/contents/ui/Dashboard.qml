@@ -1,40 +1,50 @@
 import QtQuick
 import QtQuick.Layouts
 import "Palette.js" as P
+import "Themes.js" as Th
 
-// The popup. Plain QtQuick with colours passed in, so it follows the Plasma
-// theme and can also be rendered outside the shell.
+// The popup. Plain QtQuick with the theme passed in, so the Plasma widget and the
+// tray app look the same. Only the middle part differs from theme to theme.
 Item {
-    id: dash
+    id: board
 
     property var usage: null
     property bool busy: false
     property real now: Date.now() / 1000
-    property color textColor: "#eeeeee"
-    property color mutedColor: "#aaaaaa"
-    property color backgroundColor: "#202028"
+    property string theme: "orbit"
+    property string colorMode: "system"
+    property bool systemDark: true
+    property real bleed: 0
     signal refreshRequested()
 
-    readonly property bool dark: (backgroundColor.r + backgroundColor.g + backgroundColor.b) / 3 < 0.5
-    readonly property color cardColor: dark ? Qt.rgba(1, 1, 1, 0.055) : Qt.rgba(0, 0, 0, 0.04)
-    readonly property color trackColor: dark ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(0, 0, 0, 0.10)
-    readonly property color gridColor: dark ? Qt.rgba(1, 1, 1, 0.09) : Qt.rgba(0, 0, 0, 0.09)
-    readonly property color sessionLine: dark ? "#22d3ee" : "#0891b2"
-    readonly property color weekLine: dark ? "#a78bfa" : "#7c3aed"
+    readonly property bool dark: Th.isDark(colorMode, systemDark)
+    readonly property var tk: Th.tokens(theme, dark)
     readonly property var session: usage ? usage.session : null
     readonly property var week: usage ? usage.week : null
     readonly property var verdict: makeVerdict()
+    readonly property var days: dayLabels()
 
     implicitWidth: 420
     implicitHeight: column.implicitHeight + 32
 
+    function missingText(kind) {
+        return kind === "session" && week ? P.t("No 5-hour limit") : P.t("No data")
+    }
+
+    function resetText(limit) {
+        if (!limit || !limit.reset) return ""
+        var left = limit.reset - now
+        return left < 86400 ? P.t("resets in %1", P.duration(left)) : P.t("resets %1", P.clock(limit.reset, now))
+    }
+
     function makeVerdict() {
         if (!usage || (!session && !week))
-            return { color: "#94a3b8", title: P.t("No data"), text: usage && usage.error ? P.t(usage.error) : P.t("Waiting for the first answer from Claude Code") }
+            return { color: "#94a3b8", title: P.t("No data"),
+                     text: usage && usage.error ? P.t(usage.error) : P.t("Waiting for the first answer from Claude Code") }
         var hard = (session && session.pct >= 100) ? session : (week && week.pct >= 100 ? week : null)
         if (hard) {
             var what = P.t(hard === session ? "Session limit reached" : "Week limit reached")
-            return { color: "#ef4444", title: P.t("Limit reached"),
+            return { color: tk.danger, title: P.t("Limit reached"),
                      text: hard.reset ? P.t("%1, resets in %2", what, P.duration(hard.reset - now)) : what }
         }
         var sRun = session && session.runout, wRun = week && week.runout
@@ -63,6 +73,32 @@ Item {
                + ", " + s.sessions + " " + P.sessions(s.sessions)
     }
 
+    function dayLabels() {
+        var out = []
+        var today = new Date(now * 1000)
+        for (var i = 6; i >= 0; i--) {
+            var day = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i)
+            var start = Math.max(day.getTime() / 1000, now - 7 * 86400)
+            var end = Math.min(day.getTime() / 1000 + 86400, now)
+            out.push({ name: P.dayShort(day), middle: ((start + end) / 2 - (now - 7 * 86400)) / (7 * 86400) })
+        }
+        return out
+    }
+
+    // bleed covers the padding Plasma leaves around a popup, so no rim of the system theme shows.
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -board.bleed
+        color: board.tk.bg
+        radius: board.tk.radius
+    }
+
+    Component { id: orbitBody; BodyOrbit { dash: board } }
+    Component { id: linesBody; BodyRows { dash: board } }
+    Component { id: terminalBody; BodyRows { dash: board; style: "text" } }
+    Component { id: batteryBody; BodyRows { dash: board; style: "cells"; showLeft: true } }
+    Component { id: paperBody; BodyPaper { dash: board } }
+
     ColumnLayout {
         id: column
         anchors.fill: parent
@@ -74,7 +110,6 @@ Item {
             spacing: 8
 
             Canvas {
-                width: 20; height: 20
                 Layout.preferredWidth: 20
                 Layout.preferredHeight: 20
                 onPaint: {
@@ -93,49 +128,48 @@ Item {
                     }
                 }
             }
-            Text {
+            T {
+                tk: board.tk
                 text: "Claude Pulse"
-                color: dash.textColor
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
             }
             Rectangle {
-                visible: !!(dash.usage && dash.usage.plan)
+                visible: !!(board.usage && board.usage.plan)
                 Layout.preferredWidth: planLabel.implicitWidth + 14
                 Layout.preferredHeight: 20
-                radius: 10
-                color: dash.trackColor
-                Text {
+                radius: Math.min(10, board.tk.radius)
+                color: board.tk.line
+                T {
                     id: planLabel
                     anchors.centerIn: parent
-                    text: dash.usage && dash.usage.plan ? dash.usage.plan : ""
-                    textFormat: Text.PlainText
-                    color: dash.textColor
+                    tk: board.tk
+                    text: board.usage && board.usage.plan ? board.usage.plan : ""
                     font.pixelSize: 11
                     font.weight: Font.DemiBold
                 }
             }
             Item { Layout.fillWidth: true }
-            Text {
-                visible: !!(dash.usage && dash.usage.fetched_at)
-                text: dash.usage && dash.usage.fetched_at ? P.ago(dash.now - dash.usage.fetched_at) : ""
-                color: dash.mutedColor
+            T {
+                visible: !!(board.usage && board.usage.fetched_at)
+                tk: board.tk
+                muted: true
+                text: board.usage && board.usage.fetched_at ? P.ago(board.now - board.usage.fetched_at) : ""
                 font.pixelSize: 12
             }
             Rectangle {
-                id: refreshButton
-                width: 28; height: 28; radius: 14
                 Layout.preferredWidth: 28
                 Layout.preferredHeight: 28
-                color: refreshArea.containsMouse ? dash.trackColor : "transparent"
-                Text {
+                radius: Math.min(14, board.tk.radius)
+                color: refreshArea.containsMouse ? board.tk.line : "transparent"
+                T {
                     id: refreshGlyph
                     anchors.centerIn: parent
+                    tk: board.tk
                     text: "↻"
-                    color: dash.textColor
                     font.pixelSize: 17
                     RotationAnimator on rotation {
-                        running: dash.busy
+                        running: board.busy
                         loops: Animation.Infinite
                         from: 0; to: 360; duration: 900
                         onRunningChanged: if (!running) refreshGlyph.rotation = 0
@@ -146,7 +180,7 @@ Item {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: dash.refreshRequested()
+                    onClicked: board.refreshRequested()
                 }
             }
         }
@@ -154,182 +188,134 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: verdictColumn.implicitHeight + 20
-            radius: 12
-            color: Qt.rgba(Qt.color(dash.verdict.color).r, Qt.color(dash.verdict.color).g, Qt.color(dash.verdict.color).b, dash.dark ? 0.16 : 0.13)
+            radius: board.tk.radius
+            color: Qt.rgba(Qt.color(board.verdict.color).r, Qt.color(board.verdict.color).g, Qt.color(board.verdict.color).b, board.dark ? 0.16 : 0.13)
             Rectangle {
                 id: verdictDot
                 x: 12; y: 15
                 width: 9; height: 9; radius: 4.5
-                color: dash.verdict.color
+                color: board.verdict.color
             }
             Column {
                 id: verdictColumn
                 anchors { left: verdictDot.right; leftMargin: 10; right: parent.right; rightMargin: 12; top: parent.top; topMargin: 10 }
                 spacing: 1
-                Text {
+                T {
                     width: parent.width
-                    text: dash.verdict.title
-                    color: dash.textColor
+                    tk: board.tk
+                    text: board.verdict.title
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
                 }
-                Text {
+                T {
                     width: parent.width
-                    text: dash.verdict.text
-                    textFormat: Text.PlainText
-                    color: dash.textColor
-                    opacity: 0.8
+                    tk: board.tk
+                    text: board.verdict.text
                     font.pixelSize: 12
                     wrapMode: Text.WordWrap
                 }
             }
         }
 
-        RowLayout {
+        Loader {
             Layout.fillWidth: true
-            spacing: 0
-            Item { Layout.fillWidth: true }
-            Gauge {
-                title: P.t("Session")
-                subtitle: dash.week ? P.t("No 5-hour limit") : P.t("5-hour window")
-                limit: dash.session
-                now: dash.now
-                textColor: dash.textColor
-                mutedColor: dash.mutedColor
-                trackColor: dash.trackColor
-                paceColor: dash.textColor
-            }
-            Item { Layout.fillWidth: true }
-            Gauge {
-                title: P.t("Week")
-                kind: "week"
-                subtitle: P.t("7-day window")
-                limit: dash.week
-                now: dash.now
-                textColor: dash.textColor
-                mutedColor: dash.mutedColor
-                trackColor: dash.trackColor
-                paceColor: dash.textColor
-            }
-            Item { Layout.fillWidth: true }
+            Layout.preferredHeight: item ? item.implicitHeight : 0
+            sourceComponent: ({ orbit: orbitBody, lines: linesBody, terminal: terminalBody,
+                                battery: batteryBody, paper: paperBody })[board.tk.name]
         }
 
-        Text {
+        T {
             Layout.alignment: Qt.AlignHCenter
-            Layout.topMargin: -6
-            text: P.t("Tick on the ring: usage if spent evenly")
-            color: dash.mutedColor
+            tk: board.tk
+            muted: true
+            text: P.t("Tick: usage if spent evenly")
             font.pixelSize: 11
-        }
-
-        Repeater {
-            model: dash.usage && dash.usage.models ? dash.usage.models : []
-            delegate: ColumnLayout {
-                id: modelRow
-                required property var modelData
-                Layout.fillWidth: true
-                spacing: 5
-                RowLayout {
-                    Layout.fillWidth: true
-                    Text {
-                        text: P.t("Week, %1", modelRow.modelData.name)
-                        textFormat: Text.PlainText
-                        color: dash.textColor
-                        font.pixelSize: 13
-                    }
-                    Item { Layout.fillWidth: true }
-                    Text {
-                        text: P.t("%1%, %2% left", Math.round(modelRow.modelData.pct), Math.round(100 - modelRow.modelData.pct))
-                        color: dash.mutedColor
-                        font.pixelSize: 12
-                    }
-                }
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: 7
-                    radius: 3.5
-                    color: dash.trackColor
-                    Rectangle {
-                        height: parent.height
-                        radius: parent.radius
-                        width: Math.max(height, parent.width * Math.min(100, modelRow.modelData.pct) / 100)
-                        gradient: Gradient {
-                            orientation: Gradient.Horizontal
-                            GradientStop { position: 0; color: P.level(modelRow.modelData.pct, "week").a }
-                            GradientStop { position: 1; color: P.level(modelRow.modelData.pct, "week").b }
-                        }
-                        Behavior on width { NumberAnimation { duration: 900; easing.type: Easing.OutCubic } }
-                    }
-                }
-            }
         }
 
         Rectangle {
             Layout.fillWidth: true
             implicitHeight: trendColumn.implicitHeight + 22
-            radius: 12
-            color: dash.cardColor
+            radius: board.tk.radius
+            color: board.tk.card
             ColumnLayout {
                 id: trendColumn
                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: 11 }
-                spacing: 8
+                spacing: 6
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 6
-                    Text {
-                        text: P.t("Last 24 hours")
-                        color: dash.textColor
+                    T {
+                        tk: board.tk
+                        text: P.t("Last 7 days")
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
                     }
                     Item { Layout.fillWidth: true }
-                    Rectangle { width: 10; height: 3; radius: 1.5; color: dash.sessionLine }
-                    Text { text: P.t("session"); color: dash.mutedColor; font.pixelSize: 11 }
-                    Rectangle { width: 10; height: 3; radius: 1.5; color: dash.weekLine; Layout.leftMargin: 6 }
-                    Text { text: P.t("week"); color: dash.mutedColor; font.pixelSize: 11 }
+                    Rectangle { width: 10; height: 3; radius: 1.5; color: board.tk.session.b }
+                    T { tk: board.tk; muted: true; text: P.t("session"); font.pixelSize: 11 }
+                    Rectangle { width: 10; height: 3; radius: 1.5; color: board.tk.week.b; Layout.leftMargin: 6 }
+                    T { tk: board.tk; muted: true; text: P.t("week"); font.pixelSize: 11 }
                 }
                 Item {
                     Layout.fillWidth: true
                     implicitHeight: 64
                     Trend {
                         anchors.fill: parent
-                        history: dash.usage && dash.usage.history ? dash.usage.history : []
-                        now: dash.now
-                        gridColor: dash.gridColor
-                        sessionColor: dash.sessionLine
-                        weekColor: dash.weekLine
+                        history: board.usage && board.usage.history ? board.usage.history : []
+                        now: board.now
+                        gridColor: board.tk.line
+                        sessionColor: board.tk.session.b
+                        weekColor: board.tk.week.b
                     }
-                    Text {
+                    T {
                         anchors.centerIn: parent
-                        visible: !dash.usage || !dash.usage.history || dash.usage.history.length < 2
+                        visible: !board.usage || !board.usage.history || board.usage.history.length < 2
+                        tk: board.tk
+                        muted: true
                         text: P.t("The chart fills in after a few updates")
-                        color: dash.mutedColor
                         font.pixelSize: 12
+                    }
+                }
+                Item {
+                    id: dayRow
+                    Layout.fillWidth: true
+                    implicitHeight: 14
+                    Repeater {
+                        model: board.days
+                        T {
+                            required property var modelData
+                            x: Math.max(0, Math.min(dayRow.width - width, dayRow.width * modelData.middle - width / 2))
+                            tk: board.tk
+                            muted: true
+                            text: modelData.name
+                            font.pixelSize: 11
+                        }
                     }
                 }
             }
         }
 
-        Text {
+        T {
             Layout.fillWidth: true
             visible: text.length > 0
+            tk: board.tk
+            muted: true
             text: {
-                if (!dash.usage || !dash.usage.stats) return ""
-                var parts = [dash.statLine(dash.usage.stats.day, P.t("24 h")), dash.statLine(dash.usage.stats.week, P.t("7 days"))]
+                if (!board.usage || !board.usage.stats) return ""
+                var parts = [board.statLine(board.usage.stats.day, P.t("24 h")), board.statLine(board.usage.stats.week, P.t("7 days"))]
                 return parts.filter(function (s) { return s.length > 0 }).join("\n")
             }
-            color: dash.mutedColor
             font.pixelSize: 12
             lineHeight: 1.2
         }
 
-        Text {
+        T {
             Layout.fillWidth: true
-            visible: !!(dash.usage && dash.usage.ok === false && dash.usage.fetched_at)
-            text: dash.usage && dash.usage.error
-                  ? P.t("Could not update: %1", P.t(dash.usage.error)) + ". " + P.t("Showing the last known data") : ""
-            textFormat: Text.PlainText
-            color: "#ef4444"
+            visible: !!(board.usage && board.usage.ok === false && board.usage.fetched_at)
+            tk: board.tk
+            text: board.usage && board.usage.error
+                  ? P.t("Could not update: %1", P.t(board.usage.error)) + ". " + P.t("Showing the last known data") : ""
+            color: board.tk.danger
             font.pixelSize: 12
             wrapMode: Text.WordWrap
         }

@@ -5,20 +5,22 @@ See how much of your Claude Code limits you have used, right on the Linux panel,
 [Русская версия](README.ru.md)
 
 <p>
-  <img src="docs/dashboard-risk-dark.png" width="400" alt="Dashboard showing a run-out warning, dark theme">
-  <img src="docs/dashboard-calm-light.png" width="400" alt="Dashboard with plenty of room left, light theme">
+  <img src="docs/themes-dark.png" alt="All five themes in dark mode: Orbit, Lines, Terminal, Battery and Paper">
+</p>
+<p>
+  <img src="docs/themes-light.png" alt="All five themes in light mode">
 </p>
 
 Images use sample data. Claude Pulse is an unofficial community project, not affiliated with or endorsed by Anthropic.
 
 ## Features
 
-- **Panel icon with two rings.** The outer blue ring is the 5-hour session, the inner violet ring is the week. A ring turns red above 85%. Plans with no 5-hour limit, such as verified Ultra accounts, show only the week. Numbers next to the rings are optional.
-- **Dashboard on click.** It shows your current plan, percent used and left, a countdown to each reset, per-model weekly limits and a 24-hour chart.
-- **Pace tick.** The tick on each ring marks where you would be if you spent the limit evenly, so you can see at a glance if you are ahead of it.
+- **Panel icon.** Blue is always the 5-hour session and violet the week. A mark turns red above 85%. Plans with no 5-hour limit, such as verified Ultra accounts, show only the week. Numbers next to the icon are optional.
+- **Dashboard on click.** It shows your current plan, percent used and left, a countdown to each reset, per-model weekly limits and a 7-day chart marked by day.
+- **Pace tick.** The tick on each ring or bar marks where you would be if you spent the limit evenly, so you can see at a glance if you are ahead of it.
 - **Forecast.** It works out whether you will run out before the reset, and when.
 - **Notifications.** You get one alert when a forecast shows you hitting a limit early, and one at each usage threshold (80% and 95% by default).
-- **Follows your theme.** Light and dark are both supported, in English and Russian.
+- **Five themes.** Choose Orbit, Lines, Terminal, Battery or Paper, each in light, dark or following the system. The interface is in English and Russian.
 
 ## Requirements
 
@@ -60,7 +62,19 @@ To uninstall, run `./uninstall.sh`. Add `--purge` to delete settings and history
 
 Click the icon to open the dashboard. Hover over it for a short summary. An orange dot on the icon means a limit is forecast to run out before it resets.
 
-**To hide the numbers on Plasma:** right-click the widget, choose **Configure Claude Pulse**, and untick **Show numbers next to the rings**. The tray app always shows only the rings, because tray icons cannot hold text.
+**To change the look on Plasma:** right-click the widget and choose **Configure Claude Pulse**. There you can pick the theme and appearance, and turn the numbers next to the icon on or off. In the tray app, the same choices are in the icon's right-click menu. Tray icons cannot hold text, so they never show numbers.
+
+## Themes
+
+| Theme | Popup | Panel icon |
+| --- | --- | --- |
+| Orbit (default) | One large double ring with details beside it | Two rings |
+| Lines | Compact bars, close to native KDE windows | Two bars |
+| Terminal | Monospace text with block bars | Two bars |
+| Battery | Cells that show what's left | Two rows of cells |
+| Paper | Warm colors and large serif numbers | Two rings |
+
+Themes cover the panel icon, the popup and its chart, and the tray app. Notifications and the frame of the settings window are drawn by your desktop, so they keep the system style.
 
 ## Notifications
 
@@ -80,6 +94,8 @@ Optional file: `~/.config/claude-pulse/config.json`. Invalid values are ignored.
 ```json
 {
   "language": "auto",
+  "theme": "orbit",
+  "color_mode": "system",
   "interval_minutes": 5,
   "notifications": true,
   "thresholds": [80, 95],
@@ -92,6 +108,7 @@ Optional file: `~/.config/claude-pulse/config.json`. Invalid values are ignored.
 | Key | Meaning |
 | --- | --- |
 | `language` | `auto`, `en` or `ru` |
+| `theme`, `color_mode` | Tray app only: `orbit`, `lines`, `terminal`, `battery` or `paper`, and `system`, `light` or `dark`. Plasma keeps these in the widget's settings |
 | `interval_minutes` | Time between updates, from 1 to 60 |
 | `notifications` | Turns all alerts on or off |
 | `thresholds` | Usage percentages that trigger an alert |

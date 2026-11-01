@@ -32,9 +32,11 @@ def window(pct, left, duration):
 
 def history():
     rows = []
-    for i in range(289):
-        session = (i % 60) / 60 * 70 if 60 < i < 250 else 0
-        rows.append([now - 86400 + i * 300, round(session, 1), 30 + i * 0.09])
+    for i in range(7 * 288):
+        t = now - 7 * 86400 + i * 300
+        hour = time.localtime(t).tm_hour
+        session = ((hour - 9) % 5 + time.localtime(t).tm_min / 60) * 14 if 9 <= hour < 23 else 0
+        rows.append([t, round(session, 1), round(10 + i / (7 * 288) * 50, 1)])
     return rows
 
 
@@ -54,7 +56,8 @@ cases = {
 if len(sys.argv) > 2:
     with open(sys.argv[2], encoding="utf-8") as f:
         cases["live"] = json.load(f)
-themes = {"dark": ("#1f2130", "#eceef4", "#9aa0b4"), "light": ("#f7f7fb", "#20222c", "#6b7080")}
+THEMES = ("orbit", "lines", "terminal", "battery", "paper")
+PANEL = {"dark": ("#1f2130", "#eceef4", "#9aa0b4"), "light": ("#f7f7fb", "#20222c", "#6b7080")}
 
 
 def shot(qml, props, background, path, size=None):
@@ -71,18 +74,19 @@ def shot(qml, props, background, path, size=None):
     view.resize(*(size or (int(root.implicitWidth()), int(root.implicitHeight()))))
     view.show()
     loop = QEventLoop()
-    QTimer.singleShot(1500, loop.quit)
+    QTimer.singleShot(1200, loop.quit)
     loop.exec()
     view.grabWindow().save(path)
     view.close()
 
 
-for name, usage in cases.items():
-    for theme, (bg, text, muted) in themes.items():
-        shot("Dashboard.qml", {"usage": usage, "now": now, "backgroundColor": bg, "textColor": text, "mutedColor": muted},
-             bg, f"{out}/dashboard-{name}-{theme}.png")
-        if usage:
-            for numbers, width in ((True, 92), (False, 32)):
-                suffix = "" if numbers else "-rings"
-                shot("PanelIcon.qml", {"usage": usage, "textColor": text, "mutedColor": muted, "showNumbers": numbers},
-                     bg, f"{out}/icon-{name}-{theme}{suffix}.png", (width, 28))
+for theme in THEMES:
+    for mode, (bg, text, muted) in PANEL.items():
+        for name, usage in cases.items():
+            shot("Dashboard.qml", {"usage": usage, "now": now, "theme": theme, "colorMode": mode},
+                 "#808080", f"{out}/{theme}-{name}-{mode}.png")
+        for numbers, width in ((True, 110), (False, 50)):
+            suffix = "" if numbers else "-mark"
+            shot("PanelIcon.qml", {"usage": cases["risk"], "theme": theme, "colorMode": mode, "textColor": text,
+                                   "mutedColor": muted, "showNumbers": numbers},
+                 bg, f"{out}/{theme}-icon-{mode}{suffix}.png", (width, 28))

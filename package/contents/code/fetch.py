@@ -30,10 +30,13 @@ SESSION_SECONDS = 5 * 3600
 WEEK_SECONDS = 7 * 86400
 SAME_WINDOW_SLACK = 1800  # /usage rounds reset times, so they drift by a minute or so
 RISK_MIN_PACE = 15  # percent of the window that must pass before a projection can alarm
+THEMES = ("orbit", "lines", "terminal", "battery", "paper")
 MONTHS = {m: i + 1 for i, m in enumerate("Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split())}
 
 DEFAULTS = {
     "language": "auto",
+    "theme": "orbit",
+    "color_mode": "system",
     "interval_minutes": 5,
     "claude_path": "",
     "notifications": True,
@@ -95,6 +98,10 @@ def load_settings(raw=None):
         return cfg
     if raw.get("language") in ("auto", "en", "ru"):
         cfg["language"] = raw["language"]
+    if raw.get("theme") in THEMES:
+        cfg["theme"] = raw["theme"]
+    if raw.get("color_mode") in ("system", "light", "dark"):
+        cfg["color_mode"] = raw["color_mode"]
     minutes = raw.get("interval_minutes")
     if isinstance(minutes, (int, float)) and not isinstance(minutes, bool):
         cfg["interval_minutes"] = max(1, min(60, minutes))
@@ -402,7 +409,8 @@ def main():
     with open(os.path.join(STATE, "lock"), "w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         usage = collect("--force" in sys.argv, cfg)
-    usage["settings"] = {"language": cfg["language"], "interval_minutes": cfg["interval_minutes"]}
+    usage["settings"] = {"language": cfg["language"], "interval_minutes": cfg["interval_minutes"],
+                         "theme": cfg["theme"], "color_mode": cfg["color_mode"]}
     print(summary(usage) if "--text" in sys.argv else json.dumps(usage, ensure_ascii=False))
 
 

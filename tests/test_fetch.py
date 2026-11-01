@@ -214,6 +214,12 @@ class SettingsTests(unittest.TestCase):
                                  "claude_path": "relative/claude", "risk_min_percent": True}):
             self.assertEqual(fetch.load_settings(raw), fetch.DEFAULTS)
 
+    def test_theme_values(self):
+        cfg = fetch.load_settings({"theme": "paper", "color_mode": "dark"})
+        self.assertEqual((cfg["theme"], cfg["color_mode"]), ("paper", "dark"))
+        cfg = fetch.load_settings({"theme": "../evil", "color_mode": "pink"})
+        self.assertEqual((cfg["theme"], cfg["color_mode"]), ("orbit", "system"))
+
     def test_interval_is_clamped(self):
         self.assertEqual(fetch.load_settings({"interval_minutes": 0})["interval_minutes"], 1)
         self.assertEqual(fetch.load_settings({"interval_minutes": 9999})["interval_minutes"], 60)

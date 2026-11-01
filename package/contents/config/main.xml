@@ -7,5 +7,11 @@
         <entry name="showNumbers" type="Bool">
             <default>true</default>
         </entry>
+        <entry name="theme" type="String">
+            <default>orbit</default>
+        </entry>
+        <entry name="colorMode" type="String">
+            <default>system</default>
+        </entry>
     </group>
 </kcfg>

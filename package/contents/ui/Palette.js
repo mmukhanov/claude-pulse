@@ -5,7 +5,7 @@ var override_ = "auto"
 var ru = {
     "d": "д", "h": "ч", "min": "мин", "now": "сейчас",
     "just now": "только что", "%1 ago": "%1 назад", "tomorrow %1": "завтра %1",
-    "used": "использовано", "%1% left": "осталось %1%", "resets in %1": "сброс через %1",
+    "%1% left": "осталось %1%", "resets in %1": "сброс через %1",
     "Session": "Сессия", "Week": "Неделя", "5-hour window": "окно 5 часов", "7-day window": "окно 7 дней",
     "No data": "Нет данных", "Waiting for the first answer from Claude Code": "Жду первого ответа от Claude Code",
     "Limit reached": "Лимит исчерпан", "Using it faster than the pace": "Расход выше темпа",
@@ -17,9 +17,14 @@ var ru = {
     "Week: at this pace it runs out at %1, %2 before the reset": "Неделя: при таком темпе лимит кончится в %1, за %2 до сброса",
     "Session: about %1% of the limit by the reset": "Сессия: к сбросу выйдет примерно %1% лимита",
     "Week: about %1% of the limit by the reset": "Неделя: к сбросу выйдет примерно %1% лимита",
-    "Tick on the ring: usage if spent evenly": "Риска на кольце: столько ушло бы при ровном расходе",
+    "Tick: usage if spent evenly": "Риска: столько ушло бы при ровном расходе",
+    "%1% used": "использовано %1%", "left, used %1%": "осталось, использовано %1%", "left this week": "на неделю",
+    "resets %1": "сброс: %1", "Last 7 days": "За 7 дней",
+    "Theme:": "Тема:", "Appearance:": "Оформление:", "Follow the system": "Как в системе", "Light": "Светлое", "Dark": "Тёмное",
+    "Orbit": "Орбита", "Lines": "Линейки", "Terminal": "Терминал", "Battery": "Батарея", "Paper": "Бумага",
+    "Show numbers next to the icon": "Показывать цифры рядом со значком",
     "Week, %1": "Неделя, %1", "%1%, %2% left": "%1%, осталось %2%",
-    "Last 24 hours": "За 24 часа", "session": "сессия", "week": "неделя",
+    "session": "сессия", "week": "неделя",
     "The chart fills in after a few updates": "График наберётся за пару обновлений",
     "24 h": "24 ч", "7 days": "7 дней",
     "Could not update: %1": "Не удалось обновить: %1", "Showing the last known data": "Показаны последние данные",
@@ -29,7 +34,7 @@ var ru = {
     "Not logged in to Claude Code. Run claude and log in": "Вход в Claude Code не выполнен. Запустите claude и войдите",
     "This login has no subscription limits. Log in to Claude Code with a subscription": "У этого входа нет лимитов подписки. Войдите в Claude Code по подписке",
     "No limits in /usage output. Its format may have changed": "В ответе /usage нет лимитов. Возможно, изменился его формат",
-    "Plan: %1": "Тариф: %1", "No 5-hour limit": "Без лимита на 5 часов", "%1: no limit": "%1: без лимита", "General": "Общие", "Panel icon:": "Значок на панели:", "Show numbers next to the rings": "Показывать цифры рядом с кольцами"
+    "Plan: %1": "Тариф: %1", "No 5-hour limit": "Без лимита на 5 часов", "%1: no limit": "%1: без лимита", "General": "Общие", "Panel icon:": "Значок на панели:"
 }
 
 function setLanguage(value) { override_ = value || "auto" }
@@ -43,14 +48,6 @@ function t(source) {
     for (var i = 1; i < arguments.length; i++)
         text = text.replace("%" + i, arguments[i])
     return text
-}
-
-// Each window keeps its own colour so the rings can't be mixed up: blue for
-// the session, violet for the week. Only a nearly spent limit turns red.
-function level(pct, kind) {
-    if (pct >= 85) return { a: "#fb923c", b: "#ef4444" }
-    if (kind === "week") return { a: "#a78bfa", b: "#d946ef" }
-    return { a: "#22d3ee", b: "#3b82f6" }
 }
 
 function duration(seconds) {
@@ -73,6 +70,11 @@ function clock(epoch, now) {
     var tomorrow = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1)
     if (when.toDateString() === tomorrow.toDateString()) return t("tomorrow %1", hhmm)
     return locale.dayName(when.getDay(), 1) + " " + hhmm
+}
+
+function dayShort(date) {
+    var locale = override_ === "auto" ? Qt.locale() : Qt.locale(override_ === "ru" ? "ru_RU" : "en_US")
+    return locale.dayName(date.getDay(), 1)
 }
 
 function ago(seconds) {

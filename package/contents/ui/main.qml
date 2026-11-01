@@ -17,6 +17,10 @@ PlasmoidItem {
     readonly property string script: decodeURIComponent(Qt.resolvedUrl("../code/fetch.py").toString().replace("file://", ""))
     readonly property var session: usage ? usage.session : null
     readonly property var week: usage ? usage.week : null
+    readonly property bool systemDark: {
+        const c = Kirigami.Theme.backgroundColor
+        return (c.r + c.g + c.b) / 3 < 0.5
+    }
 
     function refresh(force) {
         if (busy) return
@@ -73,6 +77,7 @@ PlasmoidItem {
     }
 
     Plasmoid.icon: "utilities-system-monitor"
+    Plasmoid.constraintHints: Plasmoid.CanFillArea
     Plasmoid.status: (session && (session.pct >= 85 || session.runout)) || (week && (week.pct >= 85 || week.runout))
                      ? PlasmaCore.Types.ActiveStatus : PlasmaCore.Types.PassiveStatus
     toolTipMainText: "Claude Pulse"
@@ -93,6 +98,9 @@ PlasmoidItem {
             anchors.fill: parent
             usage: root.usage
             showNumbers: Plasmoid.configuration.showNumbers
+            theme: Plasmoid.configuration.theme
+            colorMode: Plasmoid.configuration.colorMode
+            systemDark: root.systemDark
             textColor: Kirigami.Theme.textColor
             mutedColor: Kirigami.Theme.disabledTextColor
             trackColor: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.2)
@@ -111,9 +119,10 @@ PlasmoidItem {
             usage: root.usage
             busy: root.busy
             now: root.now
-            textColor: Kirigami.Theme.textColor
-            mutedColor: Kirigami.Theme.disabledTextColor
-            backgroundColor: Kirigami.Theme.backgroundColor
+            theme: Plasmoid.configuration.theme
+            colorMode: Plasmoid.configuration.colorMode
+            systemDark: root.systemDark
+            bleed: Kirigami.Units.largeSpacing
             onRefreshRequested: root.refresh(true)
         }
     }
