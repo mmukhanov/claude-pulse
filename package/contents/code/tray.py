@@ -194,7 +194,7 @@ class Tray:
             QLocale.setDefault(QLocale("ru_RU" if language == "ru" else "en_US"))
         window = QGuiApplication.palette().color(QPalette.ColorRole.Window)
         view = QQuickView()
-        view.setFlags(Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint)
+        view.setFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         view.setResizeMode(QQuickView.ResizeMode.SizeRootObjectToView)
         view.setColor(QColor(Qt.GlobalColor.transparent))
         view.setInitialProperties({
