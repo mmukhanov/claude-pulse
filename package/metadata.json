@@ -1,0 +1,17 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{ "Name": "Mikhail Mukhanov" }],
+        "Category": "System Information",
+        "Description": "Claude Code usage: session and weekly limits, pace and forecast",
+        "Description[ru]": "Расход лимитов Claude Code: сессия, неделя, темп и прогноз",
+        "Icon": "utilities-system-monitor",
+        "Id": "claudepulse",
+        "License": "MIT",
+        "Name": "Claude Pulse",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-NotificationArea": "true",
+    "X-Plasma-NotificationAreaCategory": "SystemServices"
+}
