@@ -2,7 +2,7 @@
 
 See how much of your Claude Code limits you have used, right on the Linux panel, and get warned before you run out.
 
-[Русская версия](README.ru.md)
+[Русская версия](README.ru.md) · **On Windows?** See [windows/](windows/README.md): a tray icon with the same dashboard.
 
 <p>
   <img src="docs/themes-dark.png" alt="All five themes in dark mode: Orbit, Lines, Terminal, Battery and Paper">

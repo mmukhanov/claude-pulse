@@ -2,7 +2,7 @@
 
 Показывает на панели Linux, сколько лимитов Claude Code уже израсходовано, и предупреждает, пока они не кончились.
 
-[English version](README.md)
+[English version](README.md) · **Windows?** Смотрите [windows/](windows/README.ru.md): иконка в трее с той же панелью.
 
 <p>
   <img src="docs/themes-dark.png" alt="Все пять тем в тёмном оформлении: Орбита, Линейки, Терминал, Батарея и Бумага">
