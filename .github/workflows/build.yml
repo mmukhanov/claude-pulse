@@ -49,4 +49,4 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${{ github.ref_name }}" dist/ClaudePulse.exe --generate-notes --title "Claude Pulse for Windows ${{ github.ref_name }}"
+        run: gh release create "${{ github.ref_name }}" dist/ClaudePulse.exe --latest=false --generate-notes --title "Claude Pulse for Windows ${{ github.ref_name }}"
