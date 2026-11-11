@@ -67,6 +67,8 @@ STATS_RE = re.compile(r"Last (24h|7d)\W+([\d,  ]+) requests?\W+([\d,  ]+) sessio
 NOT_LOGGED_IN = "Not logged in to Claude Code. Run claude and log in"
 NO_SUBSCRIPTION = "This login has no subscription limits. Log in to Claude Code with a subscription"
 NO_LIMITS = "No limits in /usage output. Its format may have changed"
+OLD_CLAUDE = "This Claude Code can't run /usage with -p. Update it: claude update"
+UNKNOWN_RE = re.compile(r"unknown (?:skill|command|slash command)", re.I)
 
 PLAN_RE = re.compile(r"^[a-z][a-z0-9_]{0,23}$")
 
@@ -456,6 +458,8 @@ def collect(force, cfg):
                     f.write(output)
             except OSError:
                 pass
+            if UNKNOWN_RE.search(output):
+                raise RuntimeError(OLD_CLAUDE)
             raise RuntimeError(NO_SUBSCRIPTION if auth["method"] not in (None, "claude.ai") else NO_LIMITS)
     except (RuntimeError, OSError, subprocess.SubprocessError) as e:
         stale = dict(latest or {})

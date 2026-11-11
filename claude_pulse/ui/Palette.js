@@ -34,6 +34,7 @@ var ru = {
     "Not logged in to Claude Code. Run claude and log in": "Вход в Claude Code не выполнен. Запустите claude и войдите",
     "This login has no subscription limits. Log in to Claude Code with a subscription": "У этого входа нет лимитов подписки. Войдите в Claude Code по подписке",
     "No limits in /usage output. Its format may have changed": "В ответе /usage нет лимитов. Возможно, изменился его формат",
+    "This Claude Code can't run /usage with -p. Update it: claude update": "Эта версия Claude Code не умеет /usage в режиме -p. Обновите: claude update",
     "Plan: %1": "Тариф: %1", "No 5-hour limit": "Без лимита на 5 часов", "%1: no limit": "%1: без лимита", "General": "Общие", "Panel icon:": "Значок на панели:"
 }
 

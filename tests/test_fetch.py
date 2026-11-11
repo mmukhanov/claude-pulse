@@ -239,6 +239,10 @@ class LoginTests(unittest.TestCase):
         usage = self.run_collect({"plan": "Max", "logged_in": True, "method": "claude.ai"}, "new format")
         self.assertEqual(usage["error"], fetch.NO_LIMITS)
 
+    def test_old_claude_is_explained(self):
+        usage = self.run_collect({"plan": "Max", "logged_in": True, "method": "claude.ai"}, "Unknown skill: usage")
+        self.assertEqual(usage["error"], fetch.OLD_CLAUDE)
+
     def test_unavailable_status_does_not_block_usage(self):
         usage = self.run_collect({"plan": None, "logged_in": None, "method": None}, SAMPLE)
         self.assertTrue(usage["ok"])
