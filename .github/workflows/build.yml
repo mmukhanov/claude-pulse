@@ -45,14 +45,20 @@ jobs:
         with:
           name: ClaudePulse
           path: dist/ClaudePulse.exe
-      - name: Publish a release for version tags
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish the release
+        # Every successful build of the windows branch (or a v* tag) updates the release
+        # for the version in claude_pulse/__init__.py.
+        if: github.ref == 'refs/heads/windows' || startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
-            gh release upload "${{ github.ref_name }}" dist/ClaudePulse.exe --clobber
+          version=$(python -c "import claude_pulse; print(claude_pulse.__version__)")
+          tag="v${version}-windows"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/ClaudePulse.exe --clobber
           else
-            gh release create "${{ github.ref_name }}" dist/ClaudePulse.exe --latest=false --generate-notes --title "Claude Pulse for Windows ${{ github.ref_name }}"
+            gh release create "$tag" dist/ClaudePulse.exe --target "$GITHUB_SHA" --latest=false \
+              --title "Claude Pulse for Windows $version" \
+              --notes "Windows tray version of Claude Pulse. Download ClaudePulse.exe and run it. Source and README: https://github.com/${GITHUB_REPOSITORY}/tree/windows. The exe is not code-signed, so SmartScreen may warn on first start: More info → Run anyway."
           fi
