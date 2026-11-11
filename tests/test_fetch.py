@@ -68,6 +68,50 @@ class ParseTests(unittest.TestCase):
         self.assertIsNotNone(fetch.parse_reset("Nov 3, 8am", "Not/AZone", NOW))
 
 
+class FormatVariantTests(unittest.TestCase):
+    def check(self, text):
+        usage = fetch.parse_usage(text, NOW)
+        self.assertEqual(usage["session"]["pct"], 2)
+        self.assertEqual(usage["session"]["reset"], at(2026, 11, 1, 15, 50))
+        self.assertEqual(usage["week"]["pct"], 36)
+        self.assertEqual(usage["week"]["reset"], at(2026, 11, 3, 8, 0))
+        self.assertEqual([m["name"] for m in usage["models"]], ["Fable"])
+        return usage
+
+    def test_windows_line_endings(self):
+        self.check(SAMPLE.replace("\n", "\r\n"))
+
+    def test_other_separators(self):
+        for sep in (" - ", " | ", " • ", ", ", "  "):
+            self.check(SAMPLE.replace(" · ", sep))
+
+    def test_ansi_colours(self):
+        self.check(SAMPLE.replace("Current", "\x1b[1mCurrent").replace("% used", "% used\x1b[0m"))
+
+    def test_panel_layout(self):
+        usage = self.check("""Settings  Status  Config  Usage
+
+  Current session
+  █▌                                                 2% used
+  Resets 3:50pm (Europe/Warsaw)
+
+  Current week (all models)
+  ██████████████████                                 36% used
+  Resets Nov 3, 8am (Europe/Warsaw)
+
+  Current week (Fable)
+  █████                                              10% used
+  Resets at Nov 3, 8am (Europe/Warsaw)
+
+  Last 24h · 1,494 requests · 9 sessions
+""")
+        self.assertEqual(usage["stats"]["day"], {"requests": 1494, "sessions": 9})
+
+    def test_header_without_numbers_is_ignored(self):
+        usage = fetch.parse_usage("Current session\nnothing here\n", NOW)
+        self.assertIsNone(usage["session"])
+
+
 class ForecastTests(unittest.TestCase):
     def test_runs_out(self):
         # 2 of 5 hours gone, 60% used: 100% comes at 3h20, 1h40 before the reset.

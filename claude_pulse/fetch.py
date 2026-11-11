@@ -29,6 +29,7 @@ else:
 LATEST = os.path.join(STATE, "latest.json")
 HISTORY = os.path.join(STATE, "history.jsonl")
 NOTIFIED = os.path.join(STATE, "notified.json")
+UNPARSED = os.path.join(STATE, "last-usage-output.txt")
 
 MIN_AGE = 45  # seconds between real calls unless --force
 HISTORY_KEEP = 8 * 86400
@@ -53,15 +54,20 @@ DEFAULTS = {
 # Keep the console window of `claude` (a console program) from flashing up.
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 
-LIMIT_RE = re.compile(
-    r"^Current (session|week)(?: \((.+?)\))?:\s*(\d+(?:\.\d+)?)% used"
-    r"(?:\s*·\s*resets\s+(.+?)(?:\s+\(([^)]+)\))?)?\s*$"
-)
+# /usage is text for people, and its layout differs between versions and platforms:
+# "Current session: 2% used · resets 3:50pm (Europe/Warsaw)" on one line, or the
+# header, the bar with "2% used" and "Resets 3:50pm" on lines of their own. So the
+# header, the percentage and the reset are found separately rather than as one line.
+HEAD_RE = re.compile(r"Current (session|week)(?: \(([^)]+)\))?", re.I)
+PCT_RE = re.compile(r"(\d+(?:\.\d+)?)\s*%\s*used", re.I)
+RESETS_RE = re.compile(r"\bresets?\s+(.+?)(?:\s+\(([^)]+)\))?\s*$", re.I)
+ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*\x07")
 RESET_RE = re.compile(r"^(?:([A-Z][a-z]{2}) (\d{1,2})(?:, (\d{4}))?)?,?\s*(?:(\d{1,2})(?::(\d{2}))?\s*([ap]m))?$", re.I)
-STATS_RE = re.compile(r"^Last (24h|7d) · ([\d,]+) requests? · ([\d,]+) sessions?")
+STATS_RE = re.compile(r"Last (24h|7d)\W+([\d,  ]+) requests?\W+([\d,  ]+) sessions?", re.I)
 NOT_LOGGED_IN = "Not logged in to Claude Code. Run claude and log in"
 NO_SUBSCRIPTION = "This login has no subscription limits. Log in to Claude Code with a subscription"
 NO_LIMITS = "No limits in /usage output. Its format may have changed"
+
 PLAN_RE = re.compile(r"^[a-z][a-z0-9_]{0,23}$")
 
 TEXT = {
@@ -211,25 +217,44 @@ def forecast(pct, reset, duration, now):
 
 def parse_usage(text, now):
     out = {"session": None, "week": None, "models": [], "stats": {}}
-    for raw in text.splitlines():
+    found = []  # [kind, model, pct, reset text, time zone]
+    for raw in ANSI_RE.sub("", text).splitlines():
         line = raw.strip()
-        m = LIMIT_RE.match(line)
+        m = STATS_RE.search(line)
         if m:
-            kind, model, pct, reset_text, tz = m.groups()
-            pct = float(pct)
-            reset = parse_reset(reset_text, tz, now)
-            if kind == "session":
-                out["session"] = {"pct": pct, "reset": reset, **forecast(pct, reset, SESSION_SECONDS, now)}
-            elif model and model.lower() != "all models":
-                out["models"].append({"name": model, "pct": pct, "reset": reset, **forecast(pct, reset, WEEK_SECONDS, now)})
-            else:
-                out["week"] = {"pct": pct, "reset": reset, **forecast(pct, reset, WEEK_SECONDS, now)}
+            key = "day" if m.group(1).lower() == "24h" else "week"
+            out["stats"][key] = {"requests": int(re.sub(r"\D", "", m.group(2))),
+                                 "sessions": int(re.sub(r"\D", "", m.group(3)))}
+            found.append(None)  # a stats line ends the current limit block
             continue
-        m = STATS_RE.match(line)
+        rest = line
+        m = HEAD_RE.search(line)
         if m:
-            key = "day" if m.group(1) == "24h" else "week"
-            out["stats"][key] = {"requests": int(m.group(2).replace(",", "")),
-                                 "sessions": int(m.group(3).replace(",", ""))}
+            found.append([m.group(1).lower(), m.group(2), None, None, None])
+            rest = line[m.end():]
+        current = found[-1] if found else None
+        if current is None:
+            continue
+        if current[2] is None:
+            p = PCT_RE.search(rest)
+            if p:
+                current[2] = float(p.group(1))
+                rest = rest[p.end():]
+        if current[3] is None:
+            r = RESETS_RE.search(rest)
+            if r:
+                current[3], current[4] = re.sub(r"^(?:at|on)\s+", "", r.group(1).strip(" ·-–—,.")), r.group(2)
+    for item in found:
+        if not item or item[2] is None:
+            continue
+        kind, model, pct, reset_text, tz = item
+        reset = parse_reset(reset_text, tz, now)
+        if kind == "session":
+            out["session"] = {"pct": pct, "reset": reset, **forecast(pct, reset, SESSION_SECONDS, now)}
+        elif model and model.lower() != "all models":
+            out["models"].append({"name": model, "pct": pct, "reset": reset, **forecast(pct, reset, WEEK_SECONDS, now)})
+        else:
+            out["week"] = {"pct": pct, "reset": reset, **forecast(pct, reset, WEEK_SECONDS, now)}
     return out
 
 
@@ -422,8 +447,15 @@ def collect(force, cfg):
     try:
         if auth["logged_in"] is False:
             raise RuntimeError(NOT_LOGGED_IN)
-        usage = parse_usage(run_claude(cfg), now)
+        output = run_claude(cfg)
+        usage = parse_usage(output, now)
         if not usage["session"] and not usage["week"]:
+            # Keep what came back so a format change can be looked at. /usage holds no secrets.
+            try:
+                with open(UNPARSED, "w", encoding="utf-8") as f:
+                    f.write(output)
+            except OSError:
+                pass
             raise RuntimeError(NO_SUBSCRIPTION if auth["method"] not in (None, "claude.ai") else NO_LIMITS)
     except (RuntimeError, OSError, subprocess.SubprocessError) as e:
         stale = dict(latest or {})
