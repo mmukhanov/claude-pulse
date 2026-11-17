@@ -77,6 +77,7 @@ py -m pip install -r requirements.txt pyinstaller && py -m PyInstaller --noconfi
 | «Эта версия Claude Code не умеет /usage» или «Unknown skill: usage» | Обновите Claude Code: `claude update`. Старые версии, например 2.1.100, не выполняют `/usage` в режиме `-p` |
 | «В ответе /usage нет лимитов» | Пришлите в issue содержимое `%LOCALAPPDATA%\claude-pulse\last-usage-output.txt` |
 | Значка не видно | Проверьте скрытые значки (`^`) у часов |
+| Не запускается после перезагрузки | Запустите один раз вручную из текущей папки: программа перепишет автозапуск на это место. Проверьте, что *Claude Pulse* или *pyw* включён в *Диспетчер задач → Автозагрузка*. Ошибки запуска пишутся в `%LOCALAPPDATA%\claude-pulse\error.log` |
 
 ## Как это работает
 
