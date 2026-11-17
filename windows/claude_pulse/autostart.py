@@ -1,5 +1,6 @@
 """Start with Windows through the per-user Run key. No admin rights are needed."""
 import os
+import shutil
 import sys
 
 from claude_pulse import fetch
@@ -13,27 +14,38 @@ def supported():
 
 
 def command():
-    """The command line that starts this app without a console window."""
+    """The command line that starts this app without a console window.
+
+    From source it goes through the `pyw` launcher when there is one: the path of
+    the python.exe running now can be a Microsoft Store alias or a venv that can't be
+    started directly at logon.
+    """
     if getattr(sys, "frozen", False):
         return '"%s"' % sys.executable
-    exe = sys.executable
-    pythonw = os.path.join(os.path.dirname(exe), "pythonw.exe")
-    if os.path.isfile(pythonw):
-        exe = pythonw
+    exe = shutil.which("pyw")
+    if not exe:
+        exe = sys.executable
+        pythonw = os.path.join(os.path.dirname(exe), "pythonw.exe")
+        if os.path.isfile(pythonw):
+            exe = pythonw
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return '"%s" "%s"' % (exe, os.path.join(root, "claude_pulse.pyw"))
 
 
-def is_enabled():
+def stored():
+    """The command now in the Run key, or None."""
     if not supported():
-        return False
+        return None
     import winreg
     try:
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER, KEY) as key:
-            winreg.QueryValueEx(key, NAME)
-            return True
+            return winreg.QueryValueEx(key, NAME)[0]
     except OSError:
-        return False
+        return None
+
+
+def is_enabled():
+    return stored() is not None
 
 
 def set_enabled(on):
@@ -51,14 +63,20 @@ def set_enabled(on):
     fetch.save_setting("autostart_set", True)
 
 
-def enable_on_first_run():
-    """Turn autostart on once, the first time the app runs. The tray menu turns it off for good."""
+def check_on_start():
+    """Turn autostart on the first time the app runs, and keep its path current.
+
+    If the folder or exe was moved, the Run key still points to the old place and
+    nothing starts at logon, so it is rewritten to where the app runs from now.
+    Once turned off in the tray menu it stays off.
+    """
     if not supported():
         return
     raw = fetch.load_json(fetch.CONFIG)
-    if isinstance(raw, dict) and raw.get("autostart_set"):
-        return
+    first_run = not (isinstance(raw, dict) and raw.get("autostart_set"))
+    current = stored()
     try:
-        set_enabled(True)
+        if first_run or (current is not None and current != command()):
+            set_enabled(True)
     except OSError:
         pass

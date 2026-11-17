@@ -375,7 +375,7 @@ def main():
     if not lock.tryLock(100):
         return  # already running
     app.setWindowIcon(render_icon(40, 70, False))
-    autostart.enable_on_first_run()
+    autostart.check_on_start()
     cfg = fetch.load_settings()
     if cfg["language"] != "auto":
         QLocale.setDefault(QLocale("ru_RU" if cfg["language"] == "ru" else "en_US"))

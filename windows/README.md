@@ -140,6 +140,7 @@ Turn off *Start with Windows* in the tray menu, quit, delete the exe. To remove 
 | "This Claude Code can't run /usage with -p" or "Unknown skill: usage" | Update Claude Code: `claude update`. Older versions such as 2.1.100 don't run `/usage` in print mode |
 | "No limits in /usage output" | Run `claude`, then `/usage`. If limits show there, the format changed: please open an issue |
 | No icon visible | Check the hidden-icons overflow (`^`) next to the clock |
+| Doesn't start after a reboot | Start it once by hand from its current folder: it rewrites the autostart entry to that place. Check that *Claude Pulse* or *pyw* is enabled in *Task Manager → Startup apps*. A failed start is logged to `%LOCALAPPDATA%\claude-pulse\error.log` |
 | No notifications | Check *Settings → System → Notifications* and Focus Assist / Do not disturb |
 
 ## Development
